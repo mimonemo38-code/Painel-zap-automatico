@@ -211,7 +211,7 @@ router.get('/ping', (req, res) => {
   res.json({ ok: true, pong: true })
 })
 
-router.get('/api/status', async (req, res) => {
+router.get('/status', async (req, res) => {
   try {
     const waStatus = await fetch(
       `${process.env.EVOLUTION_BASE}/instance/connectionState/${process.env.EVOLUTION_INSTANCE}`,
