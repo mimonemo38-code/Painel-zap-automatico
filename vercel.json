@@ -20,13 +20,5 @@
       "src": "/(.*)",
       "dest": "zapauto.html"
     }
-  ],
-  "env": {
-    "EVOLUTION_BASE": "@evolution_base",
-    "EVOLUTION_INSTANCE": "@evolution_instance",
-    "EVOLUTION_KEY": "@evolution_key",
-    "BOT_NOME": "MRP Bot",
-    "BOT_VERSION": "1.0.0",
-    "NODE_ENV": "production"
-  }
+  ]
 }
