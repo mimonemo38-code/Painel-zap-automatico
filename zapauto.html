@@ -1215,13 +1215,25 @@ async function req(path, options = {}) {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers },
     });
+
+    const text = await res.text();
+    const tryJson = () => {
+      try { return JSON.parse(text); } catch (e) { return null; }
+    };
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { ok: false, error: err.message || `HTTP ${res.status}` };
+      const err = tryJson();
+      return { ok: false, error: (err && err.error) || (err && err.message) || `HTTP ${res.status}`, raw: text };
     }
-    return await res.json();
+
+    const data = tryJson();
+    if (!data) {
+      return { ok: false, error: 'Resposta inválida (não é JSON)', raw: text };
+    }
+
+    return data;
   } catch (e) {
-    return { ok: false, error: 'Sem resposta do servidor' };
+    return { ok: false, error: 'Sem resposta do servidor', raw: e.message };
   }
 }
 

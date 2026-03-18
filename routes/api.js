@@ -16,16 +16,26 @@ const upload = multer({ dest: uploadDir })
 
 // BUG 1 FIX: Endpoint corrigido para interpretar corretamente a Evolution API
 router.get('/whatsapp/status', async (req, res) => {
+  if (!process.env.EVOLUTION_BASE || !process.env.EVOLUTION_INSTANCE || !process.env.EVOLUTION_KEY) {
+    return res.json({ ok: false, data: { connected: false, state: 'error', error: 'Configuração Evolution API ausente' } });
+  }
+
   try {
     const r = await fetch(
       `${process.env.EVOLUTION_BASE}/instance/connectionState/${process.env.EVOLUTION_INSTANCE}`,
       { headers: { 'apikey': process.env.EVOLUTION_KEY } }
     )
-    const data = await r.json()
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text) } catch (e) { data = null }
+
+    if (!data) {
+      console.error('Evolution status não retornou JSON:', text);
+      return res.json({ ok: false, data: { connected: false, state: 'error', error: 'Resposta inválida da Evolution API', raw: text } });
+    }
+
     console.log('Evolution status raw:', JSON.stringify(data))
 
-    // Evolution API retorna: { instance: { instanceName, state } }
-    // state pode ser: "open" = conectado, "close" = desconectado, "connecting"
     const state = data?.instance?.state || data?.state || data?.status || ''
     const connected = state === 'open' || state === 'connected'
 
@@ -34,7 +44,7 @@ router.get('/whatsapp/status', async (req, res) => {
       data: {
         connected,
         state,
-        raw: data  // mandar o raw para debug
+        raw: data
       }
     })
   } catch (err) {
@@ -50,6 +60,9 @@ router.post('/whatsapp/enviar-teste', async (req, res) => {
   if (!numero || !texto) {
     return res.json({ ok: false, error: 'numero e texto obrigatórios' })
   }
+  if (!process.env.EVOLUTION_BASE || !process.env.EVOLUTION_INSTANCE || !process.env.EVOLUTION_KEY) {
+    return res.json({ ok: false, error: 'Configuração Evolution API ausente' })
+  }
 
   try {
     const r = await fetch(
@@ -63,13 +76,21 @@ router.post('/whatsapp/enviar-teste', async (req, res) => {
         body: JSON.stringify({ number: numero, text: texto })
       }
     )
-    const data = await r.json()
-    console.log('Teste envio:', JSON.stringify(data))
+
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text) } catch (e) { data = null }
+
+    console.log('Teste envio raw:', text)
+
+    if (!data) {
+      return res.json({ ok: false, error: 'Resposta inválida da Evolution API', raw: text })
+    }
 
     if (data.key || data.id || data.messageId) {
       res.json({ ok: true, data: { messageId: data.key?.id || data.id, status: 'enviado' } })
     } else {
-      res.json({ ok: false, error: JSON.stringify(data) })
+      res.json({ ok: false, error: JSON.stringify(data), raw: data })
     }
   } catch (err) {
     res.json({ ok: false, error: err.message })
