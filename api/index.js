@@ -50,6 +50,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// Error handler (garante resposta JSON em caso de erro inesperado)
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err)
+  res.status(500).json({ ok: false, error: err.message || 'Erro interno', stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined })
+})
+
 // Exporta para Vercel (serverless)
 const serverless = require('serverless-http')
 module.exports = serverless(app)
