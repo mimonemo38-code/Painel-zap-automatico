@@ -50,4 +50,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-module.exports = app
+// Exporta para Vercel (serverless)
+const serverless = require('serverless-http')
+module.exports = serverless(app)
