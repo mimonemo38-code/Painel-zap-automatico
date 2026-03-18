@@ -1,0 +1,12 @@
+node_modules/
+data/
+uploads/
+logs/
+.env
+*.log
+.DS_Store
+.vscode/
+dist/
+build/
+*.db
+*.sqlite
