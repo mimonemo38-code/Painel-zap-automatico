@@ -652,7 +652,7 @@
     </div>
   </nav>
   <div class="sidebar-footer">
-    <div style="margin-bottom:2px">Backend: <span id="footer-url" style="color:var(--accent2)">localhost:3000</span></div>
+    <div style="margin-bottom:2px">API: <span id="footer-url" style="color:var(--accent2)"></span></div>
     <div id="footer-time" style="color:var(--text3)">—</div>
   </div>
 </div>
@@ -954,30 +954,6 @@
     </div>
 
     <!-- CONFIGURAÇÕES -->
-    <div class="screen" id="screen-config">
-      <!-- Backend Connection -->
-      <div class="settings-card">
-        <div class="settings-card-header">
-          Conexão com Backend
-          <span id="ping-result-badge"></span>
-        </div>
-        <div class="settings-card-body">
-          <div class="form-group">
-            <label class="form-label">URL da API</label>
-            <div style="display:flex;gap:8px">
-              <input type="text" class="form-input" id="api-url-input" placeholder="http://localhost:3000"/>
-              <button class="btn btn-secondary" onclick="testarConexao()" id="btn-test-conn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
-                Testar
-              </button>
-              <button class="btn btn-primary" onclick="salvarUrl()">Salvar</button>
-            </div>
-          </div>
-          <div style="font-size:11px;font-family:var(--font-mono);color:var(--text3)">
-            Esta URL é salva localmente. Todas as chamadas da API usam esta base.
-          </div>
-        </div>
-      </div>
 
       <!-- WhatsApp -->
       <div class="settings-card">
@@ -1212,9 +1188,12 @@
 
 <script>
 // ===================== STATE =====================
+const storedApiUrl = localStorage.getItem('api_url');
 const state = {
   screen: 'dashboard',
-  apiUrl: localStorage.getItem('api_url') || 'http://localhost:3000',
+  apiUrl: (storedApiUrl && !/(localhost|127\.0\.0\.1)/.test(storedApiUrl))
+    ? storedApiUrl
+    : window.location.origin,
   numeros: [],
   relatorio: [],
   historico: [],
@@ -1322,7 +1301,6 @@ async function loadScreen(name) {
   else if (name === 'numeros') loadNumeros();
   else if (name === 'planilha') loadPlanilha();
   else if (name === 'alertas') loadAlertas();
-  else if (name === 'config') loadConfigScreen();
 }
 
 function refreshCurrent() { loadScreen(state.screen); }
@@ -1787,37 +1765,6 @@ async function salvarAlertas() {
 }
 
 // ===================== CONFIG =====================
-function loadConfigScreen() {
-  document.getElementById('api-url-input').value = state.apiUrl;
-  document.getElementById('footer-url').textContent = state.apiUrl.replace(/https?:\/\//,'').substring(0,20);
-}
-
-function salvarUrl() {
-  const url = document.getElementById('api-url-input').value.trim();
-  if (!url) return;
-  state.apiUrl = url;
-  localStorage.setItem('api_url', url);
-  document.getElementById('footer-url').textContent = url.replace(/https?:\/\//,'').substring(0,20);
-  toast('URL salva! Recarregando status...', 'success');
-  pollStatus();
-}
-
-async function testarConexao() {
-  const btn = document.getElementById('btn-test-conn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Testando...';
-  const r = await api.ping();
-  btn.disabled = false;
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Testar';
-  const badge = document.getElementById('ping-result-badge');
-  if (r && !r.error) {
-    badge.innerHTML = `<span class="ping-result ok">✅ Conectado</span>`;
-    toast('Conexão OK!', 'success', 2000);
-  } else {
-    badge.innerHTML = `<span class="ping-result fail">❌ Sem resposta</span>`;
-    toast('Servidor não responde', 'error');
-  }
-}
 
 async function salvarConfig() { toast('Configurações salvas!', 'success', 2000); }
 async function salvarMensagens() { toast('Mensagens salvas!', 'success', 2000); }
@@ -2137,8 +2084,7 @@ function errTable(msg, retry) {
 }
 
 // ===================== INIT =====================
-document.getElementById('api-url-input') && (document.getElementById('api-url-input').value = state.apiUrl);
-document.getElementById('footer-url').textContent = state.apiUrl.replace(/https?:\/\//,'').substring(0,20);
+document.getElementById('footer-url').textContent = window.location.origin.replace(/https?:\/\//,'').substring(0,20);
 
 startPolling();
 loadDashboard();
