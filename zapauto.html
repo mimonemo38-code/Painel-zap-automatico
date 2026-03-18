@@ -1799,7 +1799,17 @@ async function enviarMsgTeste() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ numero: phone, texto: msg })
     })
-    const data = await r.json()
+
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text) } catch (e) { data = null }
+
+    if (!data) {
+      res.style.color = 'var(--red)'
+      res.textContent = `❌ Resposta inválida: ${text.slice(0, 200)}`
+      toast('Erro ao enviar', 'error')
+      return
+    }
 
     if (data.ok) {
       res.style.color = 'var(--green)'
@@ -1807,7 +1817,7 @@ async function enviarMsgTeste() {
       toast('Mensagem enviada!', 'success')
     } else {
       res.style.color = 'var(--red)'
-      res.textContent = `❌ Erro: ${data.error}`
+      res.textContent = `❌ Erro: ${data.error || JSON.stringify(data)}`
       toast('Erro ao enviar', 'error')
     }
   } catch (err) {
@@ -1858,7 +1868,16 @@ function pararLogLive() {
 async function buscarNovosLogs() {
   try {
     const r = await fetch(`${state.apiUrl}/api/logs/live?after=${logLiveUltimoId}`)
-    const data = await r.json()
+    const text = await r.text()
+
+    let data
+    try { data = JSON.parse(text) } catch (e) { data = null }
+
+    if (!data) {
+      adicionarLinhaLog(`[ERRO] Resposta inválida: ${text.slice(0, 200)}`)
+      return
+    }
+
     if (!data.ok || !data.data?.length) return
 
     data.data.forEach(log => {
